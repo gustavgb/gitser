@@ -1,0 +1,154 @@
+#!/bin/bash
+
+SERVER_HOME=/home/gustav/Files/git_repos
+BIN=/home/gustav/Files/bin
+COMMAND=$1
+
+case $COMMAND in
+  list)
+    LIST=$(ls $SERVER_HOME | grep .git)
+    echo "${LIST//.git/}"
+    ;;
+  find)
+    if [ -z ${2+x} ]
+    then
+      echo "Missing search parameter. Usage: gitser find SEARCH_STRING"
+    else
+      $BIN/gitser list | grep $2
+    fi
+    ;;
+  create)
+    if [ -z ${2+x} ]
+    then
+      REPO_NAME=$(basename $PWD)
+    else
+      REPO_NAME=$2
+    fi
+
+    REPO_PATH=$SERVER_HOME/$REPO_NAME.git
+    if [ -d $REPO_PATH ]
+    then
+      echo Repository $REPO_NAME already exists
+    else
+      echo Creating a repository named $REPO_NAME
+      git init --bare $REPO_PATH
+      echo -n $REPO_PATH | xclip -sel clip
+      echo Remote path copied to clipboard
+    fi
+    ;;
+  get)
+    if [ -z ${2+x} ]
+    then
+      echo "Missing repository name. Usage: gitser get REPO_NAME"
+    else
+      REPO_NAME=$2
+    fi
+    REPO_PATH=$SERVER_HOME/$REPO_NAME.git
+    if [ -d $REPO_PATH ]
+    then
+      echo -n $REPO_PATH | xclip -sel clip
+      echo Remote path copied to clipboard
+    else
+      echo Repository $REPO_NAME does not exist
+    fi
+    ;;
+  rename)
+    if [ -z ${2+x} ]
+    then
+      echo "Usage: gitser rename OLD_NAME NEW_NAME"
+    elif [ -z ${3+x} ]
+    then
+      echo "Usage: gitser rename OLD_NAME NEW_NAME"
+    else
+      OLD_NAME=$2
+      NEW_NAME=$3
+      OLD_PATH=$SERVER_HOME/$OLD_NAME.git
+      NEW_PATH=$SERVER_HOME/$NEW_NAME.git
+    fi
+
+    if [ -d $OLD_PATH ]
+    then
+      if [ -d $NEW_PATH ]
+      then
+        echo Repository \"$NEW_NAME\" already exist
+      else
+        mv $OLD_PATH $NEW_PATH
+        echo Renamed \"$OLD_NAME\" to \"$NEW_NAME\"
+      fi
+    else
+      echo Repository \"$OLD_NAME\" does not exist
+    fi
+    ;;
+  clone)
+    if [ -z ${2+x} ]
+    then
+      echo "Missing repository name. Usage: gitser clone REPO_NAME"
+    else
+      REPO_NAME=$2
+    fi
+    REPO_PATH=$SERVER_HOME/$REPO_NAME.git
+    if [ -d $REPO_PATH ]
+    then
+      git clone $REPO_PATH
+    else
+      echo Repository $REPO_NAME does not exist
+    fi
+    ;;
+  set-origin)
+    if [ -z ${2+x} ]
+    then
+      echo "Missing repository name. Usage: gitser set-origin REPO_NAME"
+    else
+      REPO_NAME=$2
+    fi
+    REPO_PATH=$SERVER_HOME/$REPO_NAME.git
+    if [ -d $REPO_PATH ]
+    then
+      git remote set-url origin $REPO_PATH
+      echo Updated origin \"$REPO_PATH\"
+    else
+      echo Repository $REPO_NAME does not exist
+    fi
+    ;;
+  add-origin)
+    if [ -z ${2+x} ]
+    then
+      echo "Missing repository name. Usage: gitser add-origin REPO_NAME"
+    else
+      REPO_NAME=$2
+    fi
+    REPO_PATH=$SERVER_HOME/$REPO_NAME.git
+    if [ -d $REPO_PATH ]
+    then
+      git remote add origin $REPO_PATH
+      echo Added origin \"$REPO_PATH\"
+    else
+      echo Repository $REPO_NAME does not exist
+    fi
+    ;;
+  inspect)
+    if [ -z ${2+x} ]
+    then
+      echo "Missing repository name. Usage: gitser add-origin REPO_NAME"
+    else
+      REPO_NAME=$2
+    fi
+    REPO_PATH=$SERVER_HOME/$REPO_NAME.git
+    if [ -d $REPO_PATH ]
+    then
+      cd $REPO_PATH
+      gitk --all
+    else
+      echo Repository $REPO_NAME does not exist
+    fi
+    ;;
+  help)
+    echo "Usage: \"gitser COMMAND [ARGUMENT]\". Available commands:"
+    echo "- list: List all repositories"
+    echo "- find: Find repository containing search string"
+    echo "- create: Create a new repository using the current working directory as name or a custom name using argument."
+    echo "- get: Get the remote path of a specific repository"
+    ;;
+  *)
+    echo "Invalid command. Run \"gitser help\" to see usage"
+esac
